@@ -1,0 +1,48 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table follows {
+  JobNumber integer [not null]
+  JobNumber integer [not null]
+  created_at timestamp
+}
+
+Table VerbalSystem {
+  JobNumber [primary key]
+  username varchar
+  role varchar
+  created_at timestamp
+}
+
+Table JDrive {
+  JobNumber [primary key]
+  title varchar
+  body text [note: 'Content of the post']
+  report integer [not null]
+  status varchar
+  created_at timestamp
+}
+
+Ref user_posts: JDrive.report?> VerbalSystem.id // many-to-one
+
+Ref: VerbalSystem.JobNumber <? follows.JobNumber
+
+Ref: VerbalSystem.JobNumber <? follows.JobNumber
+
+Records VerbalSystem(id, username, role) {
+  0, 'Alice', 'admin'
+  1, 'Bob', 'moderator'
+  2, 'Candice', 'moderator'
+  3, 'David', 'member'
+}
+
+Records follows(following_JobNumber, followed_JobNumber, created_at) {
+  1, 0, '2026-01-01'
+  3, 2, '2026-02-28'
+}
+
+Records JDrive(JobNumber, title, report) {
+  0, 'Welcome to the forum!', 0
+  1, 'Guidelines', 1
+  2, 'Hello all!', 3
+}
