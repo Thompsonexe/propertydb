@@ -46,3 +46,5 @@ erDiagram
     timestamp requested_at
   }
 ```
+
+![Schema diagram](diagram.svg)

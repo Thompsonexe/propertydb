@@ -1,48 +1,59 @@
-// Use DBML to define your database structure
-// Docs: https://dbml.dbdiagram.io/docs
-
-Table follows {
-  JobNumber integer [not null]
-  JobNumber integer [not null]
-  created_at timestamp
+Project PropertyLookup {
+  database_type: 'PostgreSQL'
+  Note: 'Combines O Drive (Verbal System) and J Drive (Files) into a property lookup'
 }
 
-Table VerbalSystem {
-  JobNumber [primary key]
-  username varchar
-  role varchar
-  created_at timestamp
+Table verbal_system {
+  job_number varchar [pk]
+  estate_name varchar [not null]
+  street_name varchar [not null]
+  block varchar [not null]
+
+  Note: 'Source: O Drive (Verbal System)'
 }
 
-Table JDrive {
-  JobNumber [primary key]
-  title varchar
-  body text [note: 'Content of the post']
-  report integer [not null]
-  status varchar
-  created_at timestamp
+Table files {
+  job_number varchar [pk, ref: - verbal_system.job_number]
+  report text
+  building_description text
+  occupation_permit varchar
+  certificate_of_compliance varchar
+
+  Note: 'Source: J Drive (Files)'
 }
 
-Ref user_posts: JDrive.report?> VerbalSystem.id // many-to-one
+Table property_description {
+  id int [pk, increment]
+  estate_name varchar [not null]
+  street_name varchar [not null]
+  block varchar [not null]
+  building_description text
+  occupation_permit varchar
+  certificate_of_compliance varchar
+  last_updated_from varchar [ref: > files.job_number, note: 'Internal only, not returned to AutomateReport']
 
-Ref: VerbalSystem.JobNumber <? follows.JobNumber
+  indexes {
+    (estate_name, street_name, block) [unique, name: 'uq_property_address']
+  }
 
-Ref: VerbalSystem.JobNumber <? follows.JobNumber
-
-Records VerbalSystem(id, username, role) {
-  0, 'Alice', 'admin'
-  1, 'Bob', 'moderator'
-  2, 'Candice', 'moderator'
-  3, 'David', 'member'
+  Note: 'One row per property (Estate + Street + Block)'
 }
 
-Records follows(following_JobNumber, followed_JobNumber, created_at) {
-  1, 0, '2026-01-01'
-  3, 2, '2026-02-28'
+Table automate_report {
+  id int [pk, increment]
+  estate_name varchar [not null]
+  street_name varchar [not null]
+  block varchar [not null]
+  building_description text [note: 'Returned from property_description on match']
+  occupation_permit varchar [note: 'Returned from property_description on match']
+  certificate_of_compliance varchar [note: 'Returned from property_description on match']
+  requested_at timestamp [default: `now()`]
+
+  indexes {
+    (estate_name, street_name, block) [name: 'idx_report_address']
+  }
+
+  Note: 'Requests data by matching Estate, Street, Block from property_description. Does not return last_updated_from'
 }
 
-Records JDrive(JobNumber, title, report) {
-  0, 'Welcome to the forum!', 0
-  1, 'Guidelines', 1
-  2, 'Hello all!', 3
-}
+Ref: automate_report.(estate_name, street_name, block) > property_description.(estate_name, street_name, block)
